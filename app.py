@@ -1,3 +1,4 @@
+import base64
 import streamlit as st
 import pandas as pd
 import requests
@@ -34,8 +35,9 @@ class AnalizadorInteligente:
         if not self.api_key:
             raise ValueError("No se encontró la API Key de Hugging Face.")
 
-        # URL escrita en limpio (sin caracteres ocultos)
-        url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+        # Decodificamos la URL en tiempo real para destruir caracteres ocultos
+        url_segura = "aHR0cHM6Ly9hcGktaW5mZXJlbmNlLmh1Z2dpbmdmYWNlLmNvL21vZGVscy9taXN0cmFsYWkvTWlzdHJhbC03Qi1JbnN0cnVjdC12MC4z"
+        url = base64.b64decode(url_segura).decode("utf-8")
         
         # Agregamos User-Agent y Content-Type para evitar bloqueos anti-bots
         headers = {
