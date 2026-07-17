@@ -12,7 +12,10 @@ load_dotenv()
 class AnalizadorInteligente:
     def __init__(self, dataframe):
         self.df = dataframe
-        self.api_key = os.getenv("HF_API_KEY")
+        try:
+            self.api_key = st.secrets["HF_API_KEY"]
+        except:
+            self.api_key = os.getenv("HF_API_KEY")
         
     def limpiar_y_preparar(self):
         """Aplica limpieza básica usando comprehensions y Pandas."""
