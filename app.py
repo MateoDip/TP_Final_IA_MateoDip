@@ -30,30 +30,35 @@ class AnalizadorInteligente:
         return self.df.describe().to_string()
 
     def consultar_llm(self, pregunta):
-        """Se comunica con la API de Hugging Face usando requests."""
+        """Se comunica con la API de Hugging Face usando requests de forma segura."""
         if not self.api_key:
             raise ValueError("No se encontró la API Key de Hugging Face.")
 
-        # Usamos un modelo rápido y gratuito de Hugging Face
+        # URL escrita en limpio (sin caracteres ocultos)
         url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
         
-        contexto = self.obtener_contexto_estadistico()
-        prompt_completo = f"Eres un analista de datos. Basado en este resumen de un dataset:\n{contexto}\n\nResponde a esta consulta del usuario de forma breve y profesional: {pregunta}"
+        # Agregamos User-Agent y Content-Type para evitar bloqueos anti-bots
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "MiAppDeAnalisisDatos/1.0"
+        }
         
         payload = {
-            "inputs": prompt_completo,
-            "parameters": {"max_new_tokens": 200, "temperature": 0.7}
+            "inputs": pregunta,
+            "parameters": {"max_new_tokens": 250, "temperature": 0.7}
         }
-
-        respuesta = requests.post(url, headers=headers, json=payload)
-        respuesta.raise_for_status() # Lanza un error si falla la conexión HTTP
         
-        datos = respuesta.json()
-        texto_generado = datos[0].get('generated_text', '')
-        
-        # Limpiamos el prompt de la respuesta final
-        return texto_generado.replace(prompt_completo, "").strip()
+        try:
+            # Agregamos un timeout de 15 segundos para que no se quede colgado
+            respuesta = requests.post(url, headers=headers, json=payload, timeout=15)
+            respuesta.raise_for_status() # Esto nos avisará si la IA da error 400 o 500
+            
+            datos = respuesta.json()
+            return datos[0]["generated_text"]
+            
+        except requests.exceptions.RequestException as e:
+            return f"Error de conexión detallado: {e}"
 
 # --- FUNCIÓN GENERADORA ---
 def efecto_maquina_escribir(texto):
