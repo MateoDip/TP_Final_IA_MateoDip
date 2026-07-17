@@ -35,7 +35,7 @@ class AnalizadorInteligente:
             raise ValueError("No se encontró la API Key de Hugging Face.")
 
         # Usamos un modelo rápido y gratuito de Hugging Face
-       url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+        url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
         headers = {"Authorization": f"Bearer {self.api_key}"}
         
         contexto = self.obtener_contexto_estadistico()
