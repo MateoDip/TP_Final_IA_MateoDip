@@ -58,7 +58,9 @@ class AnalizadorInteligente:
         )
 
         payload = {
-            "model": "mistralai/Mistral-7B-Instruct-v0.3",
+            # mistralai/Mistral-7B-Instruct-v0.3 ya no lo sirve ningún Inference Provider.
+            # Usamos un modelo que HF confirma activo en el router (formato modelo:proveedor).
+            "model": "openai/gpt-oss-120b:cerebras",
             "messages": [
                 {"role": "user", "content": prompt_completo}
             ],
