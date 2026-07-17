@@ -31,34 +31,49 @@ class AnalizadorInteligente:
         return self.df.describe().to_string()
 
     def consultar_llm(self, pregunta):
-        """Se comunica con la API de Hugging Face usando requests de forma segura."""
+        """Se comunica con la API de Hugging Face (router nuevo) usando requests de forma segura."""
         if not self.api_key:
             raise ValueError("No se encontró la API Key de Hugging Face.")
 
-        # Decodificamos la URL en tiempo real para destruir caracteres ocultos
-        url_segura = "aHR0cHM6Ly9hcGktaW5mZXJlbmNlLmh1Z2dpbmdmYWNlLmNvL21vZGVscy9taXN0cmFsYWkvTWlzdHJhbC03Qi1JbnN0cnVjdC12MC4z"
+        # HF discontinuó api-inference.huggingface.co a fines de 2025.
+        # El endpoint vigente es router.huggingface.co, con formato chat-completions (estilo OpenAI).
+        url_segura = "aHR0cHM6Ly9yb3V0ZXIuaHVnZ2luZ2ZhY2UuY28vdjEvY2hhdC9jb21wbGV0aW9ucw=="
         url = base64.b64decode(url_segura).decode("utf-8")
-        
+
         # Agregamos User-Agent y Content-Type para evitar bloqueos anti-bots
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "User-Agent": "MiAppDeAnalisisDatos/1.0"
         }
-        
+
+        # Inyectamos el contexto estadístico del dataset para que el LLM
+        # pueda responder preguntas reales sobre los datos cargados.
+        contexto = self.obtener_contexto_estadistico()
+        prompt_completo = (
+            "Sos un asistente que analiza datasets. A continuación tenés un resumen "
+            "estadístico del dataset del usuario. Respondé la pregunta usando esos datos.\n\n"
+            f"Resumen estadístico:\n{contexto}\n\n"
+            f"Pregunta: {pregunta}"
+        )
+
         payload = {
-            "inputs": pregunta,
-            "parameters": {"max_new_tokens": 250, "temperature": 0.7}
+            "model": "mistralai/Mistral-7B-Instruct-v0.3",
+            "messages": [
+                {"role": "user", "content": prompt_completo}
+            ],
+            "max_tokens": 250,
+            "temperature": 0.7
         }
-        
+
         try:
             # Agregamos un timeout de 15 segundos para que no se quede colgado
             respuesta = requests.post(url, headers=headers, json=payload, timeout=15)
             respuesta.raise_for_status() # Esto nos avisará si la IA da error 400 o 500
-            
+
             datos = respuesta.json()
-            return datos[0]["generated_text"]
-            
+            return datos["choices"][0]["message"]["content"]
+
         except requests.exceptions.RequestException as e:
             return f"Error de conexión detallado: {e}"
 
